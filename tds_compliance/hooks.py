@@ -187,10 +187,6 @@ doc_events = {
 
 fixtures = [
 	{
-		"dt": "Custom Field",
-		"filters": {"creation": (">", "2024-10-06 07:46:09.627616")}
-	},
-	{
 		"dt": "Property Setter",
 		"filters": {"creation": (">", "2024-10-06 07:46:09.627616")}
 	},
