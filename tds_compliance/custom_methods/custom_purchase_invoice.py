@@ -23,12 +23,19 @@ def apply_tds(doc):
 		if not row.apply_tds:
 			continue
 
-		tax_withholding_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
-			doc, row, row.custom_tax_withholding_category
-		)
+		voucher_wise_amount = {}
+		advance_taxes = []
 
-		# Adjust TDS paid on advances
-		doc.allocate_advance_tds(tax_withholding_details, advance_taxes)
+		if doc.doctype == "Purchase Invoice":
+			tax_withholding_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
+				doc, row, row.custom_tax_withholding_category
+			)
+		else:
+			tax_withholding_details = get_party_tax_withholding_details(doc, row, row.custom_tax_withholding_category)
+
+		if advance_taxes:
+			# Adjust TDS paid on advances
+			doc.allocate_advance_tds(tax_withholding_details, advance_taxes)
 
 		if not tax_withholding_details:
 			return

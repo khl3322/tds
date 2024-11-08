@@ -68,6 +68,44 @@ def execute():
 				print_hide=0,
 			),
 		],
+		"Purchase Receipt Item": [
+			dict(
+				fieldname="custom_section_break_ricb4",
+				label="Taxwithholding Details",
+				fieldtype="Section Break",
+				insert_after="is_free_item",
+				read_only=0,
+				print_hide=0,
+			),
+			dict(
+				fieldname="custom_tax_withholding_category",
+				label="Tax Withholding Category",
+				fieldtype="Link",
+				insert_after="apply_tds",
+				options="Tax Withholding Category",
+				read_only=0,
+				print_hide=0,
+			),
+		],
+		"Purchase Order Item": [
+			dict(
+				fieldname="custom_section_break_ricb4",
+				label="Taxwithholding Details",
+				fieldtype="Section Break",
+				insert_after="is_free_item",
+				read_only=0,
+				print_hide=0,
+			),
+			dict(
+				fieldname="custom_tax_withholding_category",
+				label="Tax Withholding Category",
+				fieldtype="Link",
+				insert_after="apply_tds",
+				options="Tax Withholding Category",
+				read_only=0,
+				print_hide=0,
+			),
+		],
 		"Tax Withholding Rate": [
 			dict(
 				fieldname="custom_non_compliance_of",

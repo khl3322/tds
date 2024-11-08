@@ -4,4 +4,4 @@
 
 [post_model_sync]
 
-tds_compliance.custom_patches.add_custom_fields
+tds_compliance.custom_patches.add_custom_fields #1

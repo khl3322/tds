@@ -137,10 +137,22 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-doctype_js = {"Purchase Invoice" : "custom_js/custom_purchase_invoice.js"}
+doctype_js = {
+	"Purchase Invoice" : "custom_js/custom_purchase_invoice.js",
+	"Purchase Order" : "custom_js/custom_purchase_order.js",
+	"Purchase Receipt" : "custom_js/custom_purchase_receipt.js"
+}
 
 doc_events = {
 	"Purchase Invoice": {
+		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
+	},
+
+	"Purchase Receipt": {
+		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
+	},
+
+	"Purchase Order": {
 		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
 	}
 }
