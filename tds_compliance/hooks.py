@@ -143,6 +143,10 @@ doctype_js = {
 	"Purchase Receipt" : "custom_js/custom_purchase_receipt.js"
 }
 
+override_doctype_class = {
+	"Payment Entry": "tds_compliance.custom_methods.custom_purchase_invoice.CustomPaymentEntry"
+}
+
 doc_events = {
 	"Purchase Invoice": {
 		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
