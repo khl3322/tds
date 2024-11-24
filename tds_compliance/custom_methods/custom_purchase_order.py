@@ -3,6 +3,7 @@ from functools import reduce
 
 import frappe
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+from erpnext.controllers.accounts_controller import get_taxes_and_charges
 
 @frappe.whitelist()
 def custom_get_payment_entry(
@@ -30,6 +31,9 @@ def custom_get_payment_entry(
 		created_from_payment_request=created_from_payment_request,
 	)
 
+	if dt != "Purchase Order":
+		return pe
+
 	po_doc = frappe.get_doc(dt, dn)
 	fields_tp_copy = [
 		"item_code", "item_name", "description", "uom", "stock_uom", "qty", "rate", "amount", "conversion_factor", "base_rate", "base_amount", "net_rate", "net_amount", "apply_tds", "custom_tax_withholding_category", "tds_amount"
@@ -46,11 +50,16 @@ def custom_get_payment_entry(
 
 	outstanding_amt = 0.0
 	advance_payment_percentage = 100
-	if po_doc.advance_paid:
+	if po_doc.get("advance_paid"):
 		outstanding_amt = po_doc.rounded_total - po_doc.advance_paid
+	elif po_doc.get("outstanding_amount"):
+		outstanding_amt = po_doc.outstanding_amount
+
+	if outstanding_amt:
 		advance_payment_percentage = outstanding_amt * 100 / po_doc.rounded_total
 
 	pe.advance_payment_percentage = advance_payment_percentage
 	pe.currency = po_doc.currency
+	pe.purchase_taxes_and_charges_template = po_doc.taxes_and_charges
 
 	return pe
