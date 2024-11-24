@@ -140,7 +140,8 @@ app_license = "mit"
 doctype_js = {
 	"Purchase Invoice" : "custom_js/custom_purchase_invoice.js",
 	"Purchase Order" : "custom_js/custom_purchase_order.js",
-	"Purchase Receipt" : "custom_js/custom_purchase_receipt.js"
+	"Purchase Receipt" : "custom_js/custom_purchase_receipt.js",
+	"Purchase Receipt" : "custom_js/custom_pament_entry.js"
 }
 
 override_doctype_class = {
@@ -158,6 +159,10 @@ doc_events = {
 
 	"Purchase Order": {
 		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
+	},
+
+	"Payment Entry": {
+		"validate": ["tds_compliance.custom_methods.custom_payment_entry.on_save", "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice"],
 	}
 }
 
@@ -190,9 +195,9 @@ doc_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "tds_compliance.event.get_events"
-# }
+override_whitelisted_methods = {
+	"erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry": "tds_compliance.custom_methods.custom_purchase_order.custom_get_payment_entry"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

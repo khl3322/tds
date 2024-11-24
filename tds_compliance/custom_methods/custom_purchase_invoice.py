@@ -13,6 +13,55 @@ from erpnext.controllers.accounts_controller import validate_account_head
 from erpnext.accounts.doctype.payment_entry.payment_entry import PaymentEntry
 
 class CustomPaymentEntry(PaymentEntry):
+	def calculate_taxes(self):
+		self.total_taxes_and_charges = 0.0
+		self.base_total_taxes_and_charges = 0.0
+
+		actual_tax_dict = dict(
+			[
+				[tax.idx, flt(tax.tax_amount, tax.precision("tax_amount"))]
+				for tax in self.get("taxes")
+				if tax.charge_type == "Actual"
+			]
+		)
+
+		for i, tax in enumerate(self.get("taxes")):
+			current_tax_amount = self.get_current_tax_amount(tax)
+
+			if tax.charge_type == "Actual":
+				actual_tax_dict[tax.idx] -= current_tax_amount
+				if i == len(self.get("taxes")) - 1:
+					current_tax_amount += actual_tax_dict[tax.idx]
+
+			tax.tax_amount = current_tax_amount
+			tax.base_tax_amount = current_tax_amount
+
+			if tax.add_deduct_tax == "Deduct":
+				current_tax_amount *= -1.0
+			else:
+				current_tax_amount *= 1.0
+
+			tax.base_total = tax.total
+
+			print(tax.base_total, tax.total)
+
+			if self.payment_type == "Pay":
+				if tax.currency != self.paid_to_account_currency:
+					self.total_taxes_and_charges += flt(current_tax_amount / self.target_exchange_rate)
+				else:
+					self.total_taxes_and_charges += current_tax_amount
+			elif self.payment_type == "Receive":
+				if tax.currency != self.paid_from_account_currency:
+					self.total_taxes_and_charges += flt(current_tax_amount / self.source_exchange_rate)
+				else:
+					self.total_taxes_and_charges += current_tax_amount
+
+			self.base_total_taxes_and_charges += tax.base_tax_amount
+
+		if self.get("taxes"):
+			self.paid_amount_after_tax = self.get("taxes")[-1].base_total
+
+
 	def get_order_wise_tax_withholding_net_total(self):
 		if self.party_type == "Supplier":
 			doctype = "Purchase Order"
@@ -49,60 +98,60 @@ class CustomPaymentEntry(PaymentEntry):
 
 		return net_total
 
-	def set_tax_withholding(self):
-		if self.party_type != "Supplier":
-			return
+	# def set_tax_withholding(self):
+	# 	if self.party_type != "Supplier":
+	# 		return
 
-		if not self.apply_tax_withholding_amount:
-			return
+	# 	if not self.apply_tax_withholding_amount:
+	# 		return
 
-		net_total = self.calculate_tax_withholding_net_total()
+	# 	net_total = self.calculate_tax_withholding_net_total()
 
-		# Adding args as purchase invoice to get TDS amount
-		args = frappe._dict(
-			{
-				"company": self.company,
-				"doctype": "Payment Entry",
-				"supplier": self.party,
-				"posting_date": self.posting_date,
-				"net_total": net_total,
-			}
-		)
+	# 	# Adding args as purchase invoice to get TDS amount
+	# 	args = frappe._dict(
+	# 		{
+	# 			"company": self.company,
+	# 			"doctype": "Payment Entry",
+	# 			"supplier": self.party,
+	# 			"posting_date": self.posting_date,
+	# 			"net_total": net_total,
+	# 		}
+	# 	)
 
-		inv_row = frappe._dict({
-			"base_net_amount": net_total
-		})
+	# 	inv_row = frappe._dict({
+	# 		"base_net_amount": net_total
+	# 	})
 
-		tax_withholding_details = get_party_tax_withholding_details(args, inv_row, self.tax_withholding_category)
+	# 	tax_withholding_details = get_party_tax_withholding_details(args, inv_row, self.tax_withholding_category)
 
-		if not tax_withholding_details:
-			return
+	# 	if not tax_withholding_details:
+	# 		return
 
-		tax_withholding_details.update(
-			{"cost_center": self.cost_center or erpnext.get_default_cost_center(self.company)}
-		)
+	# 	tax_withholding_details.update(
+	# 		{"cost_center": self.cost_center or erpnext.get_default_cost_center(self.company)}
+	# 	)
 
-		accounts = []
-		for d in self.taxes:
-			if d.account_head == tax_withholding_details.get("account_head"):
-				# Preserve user updated included in paid amount
-				if d.included_in_paid_amount:
-					tax_withholding_details.update({"included_in_paid_amount": d.included_in_paid_amount})
+	# 	accounts = []
+	# 	for d in self.taxes:
+	# 		if d.account_head == tax_withholding_details.get("account_head"):
+	# 			# Preserve user updated included in paid amount
+	# 			if d.included_in_paid_amount:
+	# 				tax_withholding_details.update({"included_in_paid_amount": d.included_in_paid_amount})
 
-				d.update(tax_withholding_details)
-			accounts.append(d.account_head)
+	# 			d.update(tax_withholding_details)
+	# 		accounts.append(d.account_head)
 
-		if not accounts or tax_withholding_details.get("account_head") not in accounts:
-			self.append("taxes", tax_withholding_details)
+	# 	if not accounts or tax_withholding_details.get("account_head") not in accounts:
+	# 		self.append("taxes", tax_withholding_details)
 
-		to_remove = [
-			d
-			for d in self.taxes
-			if not d.tax_amount and d.account_head == tax_withholding_details.get("account_head")
-		]
+	# 	to_remove = [
+	# 		d
+	# 		for d in self.taxes
+	# 		if not d.tax_amount and d.account_head == tax_withholding_details.get("account_head")
+	# 	]
 
-		for d in to_remove:
-			self.remove(d)
+	# 	for d in to_remove:
+	# 		self.remove(d)
 
 
 def validate_purchase_invoice(doc, method=None):
@@ -182,7 +231,11 @@ def apply_tds(doc):
 		doc.append("taxes", tax_details)
 
 		# calculate totals again after applying TDS
-	doc.calculate_taxes_and_totals()
+
+	if doc.doctype != "Payment Entry":
+		doc.calculate_taxes_and_totals()
+	else:
+		doc.calculate_taxes()
 
 
 def get_party_tax_withholding_details(inv, inv_row, tax_withholding_category=None):
@@ -196,12 +249,12 @@ def get_party_tax_withholding_details(inv, inv_row, tax_withholding_category=Non
 	posting_date = inv.get("posting_date") or inv.get("transaction_date")
 	tax_details = get_tax_withholding_details(tax_withholding_category, posting_date, inv.company, pan_no, is_adhar_compliance)
 
-	if inv.doctype == "Payment Entry":
-		inv.tax_withholding_net_total = inv.net_total
-
 	tax_amount, tax_deducted, tax_deducted_on_advances, voucher_wise_amount = get_tax_amount(
 		party_type, parties, inv, inv_row, tax_details, posting_date, pan_no
 	)
+
+	if inv.doctype == "Purchase Order":
+		inv_row.tds_amount = tax_amount
 
 	if party_type == "Supplier":
 		tax_row = get_tax_row_for_tds(tax_details, tax_amount)
@@ -277,6 +330,12 @@ def get_tax_withholding_details(tax_withholding_category, posting_date, company,
 
 def get_party_details(inv):
 	party_type, party = "", ""
+
+	if inv.doctype == "Payment Entry":
+		party_type = inv.party_type
+		party = inv.party
+
+		return party_type, party
 
 	if inv.doctype == "Sales Invoice":
 		party_type = "Customer"
@@ -594,8 +653,10 @@ def get_tds_amount(ldc, parties, inv, tax_details, vouchers, inv_row):
 	if inv.doctype != "Payment Entry":
 		tax_withholding_net_total = inv.base_tax_withholding_net_total
 	else:
-		tax_withholding_net_total = inv.tax_withholding_net_total
+		tax_withholding_net_total = inv_row.amount or inv.tax_withholding_net_total
 
+	if inv.doctype == "Payment Entry" and inv.party_type == "Supplier":
+		inv.supplier = inv.party
 
 	if (threshold and tax_withholding_net_total >= threshold) or (
 		cumulative_threshold and supp_credit_amt >= cumulative_threshold
