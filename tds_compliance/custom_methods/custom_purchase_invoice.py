@@ -61,8 +61,6 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 			else:
 				tax_withholding_details[_tax_wh_details.get("account_head")]["tax_amount"] += _tax_wh_details.get("tax_amount")
 
-			frappe.errprint(advance_taxes)
-
 		# Adjust TDS paid on advances
 		self.allocate_advance_tds(tax_withholding_details, advance_taxes)
 
