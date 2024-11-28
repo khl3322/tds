@@ -28,15 +28,20 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 		if not self.tax_withholding_category:
 			return
 
+		tax_withholding_details = {}
 		for row in self.items:
 			if not row.custom_tax_withholding_category:
 				continue
 
-			tax_withholding_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
+			_tax_wh_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
 				self, row, row.custom_tax_withholding_category
 			)
 
-			frappe.errprint(tax_withholding_details)
+			if _tax_wh_details.get("account_head") not in tax_withholding_details:
+				tax_withholding_details[_tax_wh_details.get("account_head")] = _tax_wh_details
+			else:
+				tax_withholding_details[_tax_wh_details.get("account_head")]["tax_amount"] += _tax_wh_details.get("tax_amount")
+
 			frappe.errprint(advance_taxes)
 
 		# Adjust TDS paid on advances
@@ -47,18 +52,19 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 
 		accounts = []
 		for d in self.taxes:
-			if d.account_head == tax_withholding_details.get("account_head"):
-				d.update(tax_withholding_details)
+			if tax_withholding_details.get(d.account_head):
+				d.update(tax_withholding_details.get(d.account_head))
 
 			accounts.append(d.account_head)
 
-		if not accounts or tax_withholding_details.get("account_head") not in accounts:
-			self.append("taxes", tax_withholding_details)
+		for account, tax_details in tax_withholding_details.items():
+			if not accounts or tax_details.get("account_head") not in accounts:
+				self.append("taxes", tax_details)
 
 		to_remove = [
 			d
 			for d in self.taxes
-			if not d.tax_amount and d.account_head == tax_withholding_details.get("account_head")
+			if not d.tax_amount and tax_withholding_details.get(d.account_head)
 		]
 
 		for d in to_remove:
