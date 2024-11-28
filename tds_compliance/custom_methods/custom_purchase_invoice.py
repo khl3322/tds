@@ -13,6 +13,34 @@ from erpnext.controllers.accounts_controller import validate_account_head
 from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseInvoice
 
 class CustomPurchaseInvoice(PurchaseInvoice):
+	def allocate_advance_tds(self, tax_withholding_details, advance_taxes):
+		frappe.errprint(advance_taxes)
+		frappe.errprint(tax_withholding_details)
+		for tax in advance_taxes:
+			allocated_amount = 0
+			pending_amount = flt(tax.tax_amount - tax.allocated_amount)
+			if flt(tax_withholding_details.get("tax_amount")) >= pending_amount:
+				tax_withholding_details["tax_amount"] -= pending_amount
+				allocated_amount = pending_amount
+			elif (
+				flt(tax_withholding_details.get("tax_amount"))
+				and flt(tax_withholding_details.get("tax_amount")) < pending_amount
+			):
+				allocated_amount = tax_withholding_details["tax_amount"]
+				allocate_advance_tds["tax_amount"] = 0
+
+			self.append(
+				"advance_tax",
+				{
+					"reference_type": "Payment Entry",
+					"reference_name": tax.parent,
+					"reference_detail": tax.name,
+					"account_head": tax.account_head,
+					"allocated_amount": allocated_amount,
+				},
+			)
+
+
 	def set_tax_withholding(self):
 		self.set("advance_tax", [])
 		self.set("tax_withheld_vouchers", [])
