@@ -15,20 +15,16 @@ def custom_get_payment_entry(
 	party_type=None,
 	payment_type=None,
 	reference_date=None,
-	ignore_permissions=False,
-	created_from_payment_request=False,
 ):
 	pe = get_payment_entry(
 		dt,
-		dn,
-		party_amount=party_amount,
-		bank_account=bank_account,
-		bank_amount=bank_amount,
-		party_type=party_type,
-		payment_type=payment_type,
-		reference_date=reference_date,
-		ignore_permissions=ignore_permissions,
-		created_from_payment_request=created_from_payment_request,
+        dn,
+        party_amount=None,
+        bank_account=None,
+        bank_amount=None,
+        party_type=None,
+        payment_type=None,
+        reference_date=None,
 	)
 
 	if dt != "Purchase Order":

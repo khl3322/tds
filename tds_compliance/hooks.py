@@ -145,14 +145,11 @@ doctype_js = {
 }
 
 override_doctype_class = {
-	"Payment Entry": "tds_compliance.custom_methods.custom_purchase_invoice.CustomPaymentEntry"
+	"Payment Entry": "tds_compliance.custom_methods.custom_payment_entry.CustomPaymentEntry",
+	"Purchase Invoice": "tds_compliance.custom_methods.custom_purchase_invoice.CustomPurchaseInvoice",
 }
 
 doc_events = {
-	"Purchase Invoice": {
-		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
-	},
-
 	"Purchase Receipt": {
 		"validate": "tds_compliance.custom_methods.custom_purchase_invoice.validate_purchase_invoice",
 	},
