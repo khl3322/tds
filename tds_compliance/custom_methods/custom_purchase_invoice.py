@@ -45,17 +45,6 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 		self.set("advance_tax", [])
 		self.set("tax_withheld_vouchers", [])
 
-		if not self.apply_tds:
-			return
-
-		if self.apply_tds and not self.get("tax_withholding_category"):
-			self.tax_withholding_category = frappe.db.get_value(
-				"Supplier", self.supplier, "tax_withholding_category"
-			)
-
-		if not self.tax_withholding_category:
-			return
-
 		tax_withholding_details = {}
 		for row in self.items:
 			if not row.custom_tax_withholding_category:
