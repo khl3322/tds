@@ -28,7 +28,7 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 		if not self.tax_withholding_category:
 			return
 
-		for row in doc.items:
+		for row in self.items:
 			if not row.custom_tax_withholding_category:
 				continue
 
