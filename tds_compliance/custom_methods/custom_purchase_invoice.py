@@ -22,13 +22,13 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 			allocated_amount = 0
 			pending_amount = flt(tax.tax_amount - tax.allocated_amount)
 			if flt(tax_holding_amount) >= pending_amount:
-				tax_withholding_details["tax_amount"] -= pending_amount
+				tax_holding_amount -= pending_amount
 				allocated_amount = pending_amount
 			elif (
 				flt(tax_holding_amount)
 				and flt(tax_holding_amount) < pending_amount
 			):
-				allocated_amount = tax_withholding_details["tax_amount"]
+				allocated_amount = tax_holding_amount
 				allocate_advance_tds["tax_amount"] = 0
 
 			self.append(
