@@ -28,9 +28,16 @@ class CustomPurchaseInvoice(PurchaseInvoice):
 		if not self.tax_withholding_category:
 			return
 
-		tax_withholding_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
-			self, self.tax_withholding_category
-		)
+		for row in doc.items:
+			if not row.custom_tax_withholding_category:
+				continue
+
+			tax_withholding_details, advance_taxes, voucher_wise_amount = get_party_tax_withholding_details(
+				self, row, row.custom_tax_withholding_category
+			)
+
+			frappe.errprint(tax_withholding_details)
+			frappe.errprint(advance_taxes)
 
 		# Adjust TDS paid on advances
 		self.allocate_advance_tds(tax_withholding_details, advance_taxes)
