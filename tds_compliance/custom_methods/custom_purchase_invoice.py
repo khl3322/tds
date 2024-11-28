@@ -14,17 +14,19 @@ from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseI
 
 class CustomPurchaseInvoice(PurchaseInvoice):
 	def allocate_advance_tds(self, tax_withholding_details, advance_taxes):
-		frappe.errprint(advance_taxes)
-		frappe.errprint(tax_withholding_details)
+		tax_holding_amount = 0
+		for tax_account in tax_withholding_details:
+			tax_holding_amount += tax_withholding_details.get(tax_account).get("tax_amount")
+
 		for tax in advance_taxes:
 			allocated_amount = 0
 			pending_amount = flt(tax.tax_amount - tax.allocated_amount)
-			if flt(tax_withholding_details.get("tax_amount")) >= pending_amount:
+			if flt(tax_holding_amount) >= pending_amount:
 				tax_withholding_details["tax_amount"] -= pending_amount
 				allocated_amount = pending_amount
 			elif (
-				flt(tax_withholding_details.get("tax_amount"))
-				and flt(tax_withholding_details.get("tax_amount")) < pending_amount
+				flt(tax_holding_amount)
+				and flt(tax_holding_amount) < pending_amount
 			):
 				allocated_amount = tax_withholding_details["tax_amount"]
 				allocate_advance_tds["tax_amount"] = 0
