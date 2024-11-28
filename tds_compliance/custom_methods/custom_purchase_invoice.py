@@ -14,33 +14,32 @@ from erpnext.accounts.doctype.purchase_invoice.purchase_invoice import PurchaseI
 
 class CustomPurchaseInvoice(PurchaseInvoice):
 	def allocate_advance_tds(self, tax_withholding_details, advance_taxes):
-		tax_holding_amount = 0
 		for tax_account in tax_withholding_details:
-			tax_holding_amount += tax_withholding_details.get(tax_account).get("tax_amount")
+			tax_holding_amount = tax_withholding_details.get(tax_account).get("tax_amount")
 
-		for tax in advance_taxes:
-			allocated_amount = 0
-			pending_amount = flt(tax.tax_amount - tax.allocated_amount)
-			if flt(tax_holding_amount) >= pending_amount:
-				tax_holding_amount -= pending_amount
-				allocated_amount = pending_amount
-			elif (
-				flt(tax_holding_amount)
-				and flt(tax_holding_amount) < pending_amount
-			):
-				allocated_amount = tax_holding_amount
-				allocate_advance_tds["tax_amount"] = 0
+			for tax in advance_taxes:
+				allocated_amount = 0
+				pending_amount = flt(tax.tax_amount - tax.allocated_amount)
+				if flt(tax_holding_amount) >= pending_amount:
+					tax_holding_amount -= pending_amount
+					allocated_amount = pending_amount
+				elif (
+					flt(tax_holding_amount)
+					and flt(tax_holding_amount) < pending_amount
+				):
+					allocated_amount = tax_holding_amount
+					allocate_advance_tds["tax_amount"] = 0
 
-			self.append(
-				"advance_tax",
-				{
-					"reference_type": "Payment Entry",
-					"reference_name": tax.parent,
-					"reference_detail": tax.name,
-					"account_head": tax.account_head,
-					"allocated_amount": allocated_amount,
-				},
-			)
+				self.append(
+					"advance_tax",
+					{
+						"reference_type": "Payment Entry",
+						"reference_name": tax.parent,
+						"reference_detail": tax.name,
+						"account_head": tax_account,
+						"allocated_amount": allocated_amount,
+					},
+				)
 
 
 	def set_tax_withholding(self):
