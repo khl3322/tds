@@ -466,17 +466,21 @@ def get_taxes_deducted_on_advances_allocated(inv, tax_details):
 		if advances:
 			pe = frappe.qb.DocType("Payment Entry").as_("pe")
 			at = frappe.qb.DocType("Advance Taxes and Charges").as_("at")
+			pe_items = frappe.qb.DocType("Payment Entry Item")
 
-			tax_info = (
-				frappe.qb.from_(at)
-				.inner_join(pe)
+			query = (
+				frappe.qb.from_(pe)
+				.inner_join(pe_items)
+				.on(pe.name == pe_items.parent)
+				.inner_join(at)
 				.on(pe.name == at.parent)
-				.select(pe.posting_date, at.parent, at.name, at.tax_amount, at.allocated_amount)
-				.where(pe.tax_withholding_category == tax_details.get("tax_withholding_category"))
+				.select(pe.name, pe.posting_date, at.parent, at.name, at.tax_amount, at.allocated_amount)
 				.where(at.parent.isin(advances))
 				.where(at.account_head == tax_details.account_head)
-				.run(as_dict=True)
+				.where(pe_items.custom_tax_withholding_category == tax_details.get("tax_withholding_category"))
 			)
+
+			tax_info = query.run(as_dict=1)
 
 	return tax_info
 
